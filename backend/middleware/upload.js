@@ -12,8 +12,10 @@ const fileFilter = (req, file, cb) => {
     if (file.originalname.toLowerCase().endsWith('.pdf')) {
       file.mimetype = 'application/pdf';
     }
+    console.log(`✅ File filter passed: ${file.originalname} (${file.mimetype})`);
     cb(null, true);
   } else {
+    console.warn(`❌ File filter rejected: ${file.originalname} (${file.mimetype})`);
     cb(new Error('Only PDF and text files are allowed. Please ensure your file has a .pdf extension.'), false);
   }
 };

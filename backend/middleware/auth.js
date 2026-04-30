@@ -11,7 +11,8 @@ exports.protect = async (req, res, next) => {
 
   // Make sure token exists
   if (!token) {
-    return res.status(401).json({ success: false, error: 'Not authorized to access this route' });
+    console.warn('⚠️ Auth failed: No token found in cookies');
+    return res.status(401).json({ success: false, error: 'Not authorized: No authentication token found' });
   }
 
   try {
