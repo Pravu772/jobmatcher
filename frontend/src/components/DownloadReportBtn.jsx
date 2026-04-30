@@ -2,7 +2,8 @@ import { Download } from 'lucide-react';
 
 export default function DownloadReportBtn({ analysisId }) {
   const handleDownload = () => {
-    window.open(`/api/generate-report/${analysisId}`, '_blank');
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+    window.open(`${baseUrl}/api/generate-report/${analysisId}`, '_blank');
   };
 
   return (

@@ -1,9 +1,7 @@
 import { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
-// Set axios to always send credentials (cookies)
-axios.defaults.withCredentials = true;
-
+// Auth context for managing user session
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
