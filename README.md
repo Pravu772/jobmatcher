@@ -1,4 +1,4 @@
-# 🚀 JobMatcher AI
+# 🚀 JobMatcher
 
 JobMatcher AI is a full-stack, AI-powered career assistant designed to help professionals optimize their resumes, pass Applicant Tracking Systems (ATS), and prepare for interviews. By leveraging the power of Google's Gemini AI, the platform provides deep, actionable insights into a candidate's career profile.
 
