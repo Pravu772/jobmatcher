@@ -23,7 +23,13 @@ export default function ResumeUploader({ resumeText, setResumeText }) {
     const formData = new FormData();
     formData.append('resume', file);
     try {
-      const res = await axios.post('/api/upload-resume', formData);
+      const token = localStorage.getItem('token');
+      const res = await axios.post('/api/upload-resume', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        }
+      });
       setResumeText(res.data.resumeText);
       setFileName(file.name);
     } catch (err) {

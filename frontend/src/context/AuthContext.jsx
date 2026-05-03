@@ -29,6 +29,7 @@ export const AuthProvider = ({ children }) => {
     const res = await axios.post('/api/auth/login', { email, password });
     if (res.data.token) {
       localStorage.setItem('token', res.data.token);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
     }
     setUser(res.data.user);
     return res.data;
@@ -38,6 +39,7 @@ export const AuthProvider = ({ children }) => {
     const res = await axios.post('/api/auth/register', { name, email, password });
     if (res.data.token) {
       localStorage.setItem('token', res.data.token);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
     }
     setUser(res.data.user);
     return res.data;
@@ -46,6 +48,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     await axios.get('/api/auth/logout');
     localStorage.removeItem('token');
+    delete axios.defaults.headers.common['Authorization'];
     setUser(null);
   };
 
