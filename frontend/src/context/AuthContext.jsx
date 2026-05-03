@@ -15,7 +15,9 @@ export const AuthProvider = ({ children }) => {
         const res = await axios.get('/api/auth/me');
         setUser(res.data.user);
       } catch (err) {
+        // If cookie fails, the interceptor might have worked if we had a token
         setUser(null);
+        localStorage.removeItem('token');
       } finally {
         setLoading(false);
       }
@@ -25,18 +27,25 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     const res = await axios.post('/api/auth/login', { email, password });
+    if (res.data.token) {
+      localStorage.setItem('token', res.data.token);
+    }
     setUser(res.data.user);
     return res.data;
   };
 
   const register = async (name, email, password) => {
     const res = await axios.post('/api/auth/register', { name, email, password });
+    if (res.data.token) {
+      localStorage.setItem('token', res.data.token);
+    }
     setUser(res.data.user);
     return res.data;
   };
 
   const logout = async () => {
     await axios.get('/api/auth/logout');
+    localStorage.removeItem('token');
     setUser(null);
   };
 

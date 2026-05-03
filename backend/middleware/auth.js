@@ -4,14 +4,18 @@ const User = require('../models/User');
 exports.protect = async (req, res, next) => {
   let token;
 
-  // Check cookies for token
-  if (req.cookies && req.cookies.token) {
+  // Check Authorization header for token
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  } 
+  // Check cookies for token if not in header
+  else if (req.cookies && req.cookies.token) {
     token = req.cookies.token;
   }
-
+  
   // Make sure token exists
   if (!token) {
-    console.warn('⚠️ Auth failed: No token found in cookies');
+    console.warn(`⚠️ Auth failed for ${req.path}: No token found in headers or cookies`);
     return res.status(401).json({ success: false, error: 'Not authorized: No authentication token found' });
   }
 

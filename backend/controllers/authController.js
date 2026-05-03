@@ -24,6 +24,7 @@ const sendTokenResponse = (user, statusCode, res) => {
 
   res.status(statusCode).cookie('token', token, options).json({
     success: true,
+    token, // Send token in body for localStorage fallback
     user,
   });
 };
@@ -33,7 +34,7 @@ const sendTokenResponse = (user, statusCode, res) => {
 exports.register = async (req, res, next) => {
   try {
     let { name, email, password } = req.body;
-    
+
     // Normalize email
     email = email.trim().toLowerCase();
 
@@ -69,7 +70,7 @@ exports.login = async (req, res, next) => {
     if (!email || !password) {
       return res.status(400).json({ success: false, error: 'Please provide email and password' });
     }
-    
+
     // Normalize email to avoid case-sensitivity or trailing space issues
     email = email.trim().toLowerCase();
 
