@@ -152,7 +152,7 @@ const analyzeResume = async (resumeText, jobDescription = '') => {
   for (const modelName of fallbackModels) {
     try {
       console.log(`[Gemini] Attempting analysis with model: ${modelName}`);
-      const model = genAI.getGenerativeModel({ 
+      const model = genAI.getGenerativeModel({
         model: modelName,
         generationConfig: {
           temperature: 0, // Force deterministic output so same resume gets same score
@@ -170,7 +170,7 @@ const analyzeResume = async (resumeText, jobDescription = '') => {
     } catch (err) {
       console.warn(`[Gemini] Model ${modelName} failed:`, err.message);
       lastError = err;
-      
+
       // If it's a 503 (Overloaded) or 429 (Quota), try the next model.
       // If it's a 400 (Bad Request) or parsing error, it's likely a prompt issue, but we'll retry anyway just in case the model hallucinated.
       if (err.message.includes('404')) {
