@@ -4,13 +4,20 @@ const User = require('../models/User');
 exports.protect = async (req, res, next) => {
   let token;
 
+  // Logging for debugging mobile issues
+  console.log(`📡 Auth check for ${req.path}`);
+  console.log('   Headers present:', Object.keys(req.headers).join(', '));
+  console.log('   Cookies present:', req.cookies ? Object.keys(req.cookies).join(', ') : 'none');
+
   // Check Authorization header for token
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
+    console.log('   ✅ Token found in Authorization header');
   } 
   // Check cookies for token if not in header
   else if (req.cookies && req.cookies.token) {
     token = req.cookies.token;
+    console.log('   ✅ Token found in cookie');
   }
   
   // Make sure token exists
