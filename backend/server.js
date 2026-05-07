@@ -52,9 +52,21 @@ app.use('/api/auth', authRoutes);
 app.use('/api', analyzeRoutes);
 app.use('/api', reportRoutes);
 
-// Health check
+// Health check — used for uptime monitoring (e.g. UptimeRobot) to prevent Render cold starts
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', message: 'JobMatcher API is running', timestamp: new Date().toISOString() });
+  const memoryMB = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2);
+  const uptimeSeconds = Math.floor(process.uptime());
+  const dbState = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+
+  res.json({
+    status: 'OK',
+    message: 'JobMatcher API is running',
+    timestamp: new Date().toISOString(),
+    uptime: `${uptimeSeconds}s`,
+    memoryUsed: `${memoryMB} MB`,
+    database: dbState[mongoose.connection.readyState] || 'unknown',
+    environment: process.env.NODE_ENV || 'development',
+  });
 });
 
 // Error handler (must be last)
