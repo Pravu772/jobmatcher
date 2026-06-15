@@ -2,13 +2,31 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// ── Dynamic model discovery ───────────────────────────────────────────────────
-// Fetches the live model list from Google AI so we never hardcode a deprecated
-// model name again. Result is cached for the lifetime of the process.
+// ── Model Cache with TTL ───────────────────────────────────────────────────────
+// Cache expires every 6 hours so stale / deprecated models are dropped
+// automatically without requiring a server restart.
+const MODEL_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
 let _cachedModels = null;
+let _cacheTimestamp = 0;
 
+// Stable, production-grade fallback models (ordered: fastest/cheapest first).
+// These are GA (generally available) models — not previews — so they won't
+// disappear without a deprecation notice.
+const STABLE_FALLBACK_MODELS = [
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite',
+  'gemini-1.5-flash',
+  'gemini-1.5-pro',
+];
+
+// ── Dynamic model discovery ───────────────────────────────────────────────────
+// Fetches the live model list from Google AI and caches it with a TTL so that
+// deprecated models are automatically dropped when the cache expires.
 const getAvailableModels = async () => {
-  if (_cachedModels) return _cachedModels;
+  const now = Date.now();
+  if (_cachedModels && now - _cacheTimestamp < MODEL_CACHE_TTL_MS) {
+    return _cachedModels;
+  }
 
   try {
     const res = await fetch(
@@ -17,27 +35,41 @@ const getAvailableModels = async () => {
     const json = await res.json();
 
     if (!json.models) {
-      console.warn('[Gemini] Could not fetch model list, using safe defaults.');
-      _cachedModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+      console.warn('[Gemini] Could not fetch model list, using stable fallbacks.');
+      _cachedModels = STABLE_FALLBACK_MODELS;
+      _cacheTimestamp = now;
       return _cachedModels;
     }
 
-    // Keep only Gemini models that support generateContent
     const supported = json.models
-      .filter(m =>
-        Array.isArray(m.supportedGenerationMethods) &&
-        m.supportedGenerationMethods.includes('generateContent') &&
-        /gemini/i.test(m.name)
-      )
+      .filter(m => {
+        const name = m.name || '';
+        const methods = Array.isArray(m.supportedGenerationMethods)
+          ? m.supportedGenerationMethods
+          : [];
+
+        // Must support generateContent
+        if (!methods.includes('generateContent')) return false;
+
+        // Must be a Gemini model
+        if (!/gemini/i.test(name)) return false;
+
+        // ✅ KEY FIX: Exclude ALL preview / experimental / versioned snapshot models.
+        // These are the ones Google removes without warning.
+        //   e.g. gemini-2.5-flash-preview-05-20, gemini-1.5-pro-exp-0801
+        if (/preview|exp(?:erimental)?-?\d/i.test(name)) return false;
+
+        return true;
+      })
       // Sort: prefer flash (fast + cheap) over pro, newer over older
       .sort((a, b) => {
-        const score = (name) => {
+        const score = name => {
           if (/2\.0-flash(?!-lite)/.test(name)) return 0; // gemini-2.0-flash ← best
           if (/2\.0-flash-lite/.test(name))    return 1;
           if (/1\.5-flash(?!-lite)/.test(name)) return 2;
-          if (/1\.5-pro/.test(name))           return 3;
-          if (/flash/.test(name))              return 4;
-          if (/pro/.test(name))               return 5;
+          if (/1\.5-pro/.test(name))            return 3;
+          if (/flash/.test(name))               return 4;
+          if (/pro/.test(name))                 return 5;
           return 9;
         };
         return score(a.name) - score(b.name);
@@ -45,11 +77,19 @@ const getAvailableModels = async () => {
       // Strip "models/" prefix — SDK expects bare model name
       .map(m => m.name.replace(/^models\//, ''));
 
-    console.log('[Gemini] Available models:', supported);
-    _cachedModels = supported.length ? supported : ['gemini-2.0-flash', 'gemini-1.5-flash'];
+    if (supported.length === 0) {
+      console.warn('[Gemini] No stable models found from API, using hardcoded fallbacks.');
+      _cachedModels = STABLE_FALLBACK_MODELS;
+    } else {
+      console.log('[Gemini] Available stable models:', supported);
+      _cachedModels = supported;
+    }
+
+    _cacheTimestamp = now;
   } catch (err) {
-    console.warn('[Gemini] Model list fetch failed, using safe defaults:', err.message);
-    _cachedModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+    console.warn('[Gemini] Model list fetch failed, using stable fallbacks:', err.message);
+    _cachedModels = STABLE_FALLBACK_MODELS;
+    _cacheTimestamp = now;
   }
 
   return _cachedModels;
@@ -195,11 +235,11 @@ Rules:
 
 // ── Main analysis function ────────────────────────────────────────────────────
 const analyzeResume = async (resumeText, jobDescription = '') => {
-  const fallbackModels = await getAvailableModels();
+  const availableModels = await getAvailableModels();
   const prompt = buildPrompt(resumeText, jobDescription);
   let lastError = null;
 
-  for (const modelName of fallbackModels) {
+  for (const modelName of availableModels) {
     try {
       console.log(`[Gemini] Attempting analysis with model: ${modelName}`);
       const model = genAI.getGenerativeModel({
@@ -222,6 +262,15 @@ const analyzeResume = async (resumeText, jobDescription = '') => {
     } catch (err) {
       console.warn(`[Gemini] Model ${modelName} failed:`, err.message);
       lastError = err;
+
+      // If this model is deprecated/not-found (404), invalidate the cache
+      // so the next request will re-fetch the live model list.
+      if (err.message && (err.message.includes('404') || err.message.includes('not found'))) {
+        console.warn('[Gemini] Deprecated model detected — invalidating model cache.');
+        _cachedModels = null;
+        _cacheTimestamp = 0;
+      }
+
       // Continue to next model regardless of error type
     }
   }
