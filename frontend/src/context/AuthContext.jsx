@@ -8,16 +8,21 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Check if user is logged in on mount
+  // Check if user is logged in on mount.
+  // This calls GET /api/auth/me — if the user is logged out (e.g. visiting
+  // /reset-password/:token from email), the request interceptor in main.jsx
+  // suppresses the 401 and returns { data: { user: null } } so this never throws.
   useEffect(() => {
     const checkLoggedIn = async () => {
       try {
         const res = await axios.get('/api/auth/me');
-        setUser(res.data.user);
+        // res.data.user is null when logged out (handled by response interceptor)
+        setUser(res.data.user || null);
       } catch (err) {
-        // If cookie fails, the interceptor might have worked if we had a token
+        // Fallback: any unexpected error clears the session
         setUser(null);
         localStorage.removeItem('token');
+        delete axios.defaults.headers.common['Authorization'];
       } finally {
         setLoading(false);
       }
@@ -46,7 +51,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    await axios.get('/api/auth/logout');
+    try {
+      await axios.get('/api/auth/logout');
+    } catch (err) {
+      // Ignore logout errors — always clear local state
+    }
     localStorage.removeItem('token');
     delete axios.defaults.headers.common['Authorization'];
     setUser(null);

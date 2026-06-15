@@ -1,6 +1,8 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const { sendPasswordResetEmail } = require('../services/emailService');
 
 // Generate JWT token
 const generateToken = (id) => {
@@ -109,6 +111,107 @@ exports.getMe = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
     res.status(200).json({ success: true, user });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Forgot Password
+// @route   POST /api/auth/forgot-password
+exports.forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Please provide an email address' });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
+
+    // Security: Never return whether email exists
+    if (!user) {
+      return res.status(200).json({
+        success: true,
+        message: 'If that email is registered, a password reset link has been sent.',
+      });
+    }
+
+    // Generate secure token
+    const token = crypto.randomBytes(32).toString('hex');
+
+    // Save token and expiry time (15 minutes)
+    user.resetToken = token;
+    user.resetTokenExpiry = Date.now() + 15 * 60 * 1000;
+
+    await user.save();
+
+    // Generate reset link using application's configured frontend URL
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const cleanFrontendUrl = frontendUrl.replace(/\/$/, '');
+    const resetLink = `${cleanFrontendUrl}/reset-password/${token}`;
+
+    console.log('🔑 Password Reset Link:', resetLink);
+
+    // Send password reset email using Resend
+    await sendPasswordResetEmail(normalizedEmail, resetLink);
+
+    res.status(200).json({
+      success: true,
+      message: 'If that email is registered, a password reset link has been sent.',
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Reset Password
+// @route   POST /api/auth/reset-password/:token
+// NOTE: This route is PUBLIC — no auth middleware is used.
+exports.resetPassword = async (req, res, next) => {
+  try {
+    console.log('🔑 Reset password request received');
+    const { token } = req.params;
+    console.log('   Token:', token ? `${token.slice(0, 10)}...` : 'MISSING');
+    const { password, confirmPassword } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ success: false, error: 'Please provide a password' });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({ success: false, error: 'Passwords do not match' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, error: 'Password must be at least 6 characters' });
+    }
+
+    // Verify token and expiry
+    const user = await User.findOne({
+      resetToken: token,
+      resetTokenExpiry: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired password reset token' });
+    }
+
+    // Hash password using bcryptjs
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Update password, clear token and expiry to prevent token reuse
+    user.password = hashedPassword;
+    user.resetToken = undefined;
+    user.resetTokenExpiry = undefined;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successful. You can now log in with your new password.',
+    });
   } catch (err) {
     next(err);
   }

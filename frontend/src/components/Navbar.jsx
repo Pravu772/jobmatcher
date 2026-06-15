@@ -9,24 +9,29 @@ export default function Navbar() {
   return (
     <nav className="navbar">
       <div className="navbar-inner">
+        {/* Left — Brand logo */}
         <Link to="/" className="navbar-brand">
-          <div className="navbar-logo"><Target size={20} color="white" /></div>
-          <span className="navbar-title">JobMatcher <span></span></span>
+          <div className="navbar-logo">
+            <Target size={18} color="white" />
+          </div>
+          <span className="navbar-title">JobMatcher</span>
         </Link>
+
+        {/* Right — Auth links */}
         <div className="navbar-links">
           {user ? (
             <>
-              <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)', marginRight: '12px', display: 'flex', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text)', marginRight: '4px' }}>
                 Hi, {user.name.split(' ')[0]}
               </span>
-              <button onClick={logout} className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
+              <button onClick={logout} className="btn-outline">
                 Logout
               </button>
             </>
           ) : (
             <>
-              <Link to="/login" style={{ padding: '6px 12px', fontSize: '0.9rem' }}>Login</Link>
-              <Link to="/signup" className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', marginLeft: '8px' }}>
+              <Link to="/login">Login</Link>
+              <Link to="/signup" className="btn-outline">
                 Sign Up
               </Link>
             </>
