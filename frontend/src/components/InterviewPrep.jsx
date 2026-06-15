@@ -15,20 +15,37 @@ export default function InterviewPrep({ data }) {
         </div>
       </div>
 
-      {data.map((qa, i) => (
-        <div key={i} className="qa-item">
-          <div className="qa-question" onClick={() => setOpenIdx(openIdx === i ? null : i)}>
-            <span>Q{i + 1}: {qa.question}</span>
-            <span>{openIdx === i ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</span>
-          </div>
-          {openIdx === i && (
-            <div className="qa-answer" style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-              <Lightbulb size={18} color="var(--warning)" style={{ flexShrink: 0, marginTop: '2px' }} />
-              <div>{qa.answer}</div>
+      {data.map((qa, i) => {
+        const handleKeyDown = (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setOpenIdx(openIdx === i ? null : i);
+          }
+        };
+
+        return (
+          <div key={i} className="qa-item">
+            <div 
+              className="qa-question" 
+              onClick={() => setOpenIdx(openIdx === i ? null : i)}
+              onKeyDown={handleKeyDown}
+              role="button"
+              tabIndex={0}
+              aria-expanded={openIdx === i}
+              aria-label={`Toggle interview question ${i + 1}`}
+            >
+              <span>Q{i + 1}: {qa.question}</span>
+              <span>{openIdx === i ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</span>
             </div>
-          )}
-        </div>
-      ))}
+            {openIdx === i && (
+              <div className="qa-answer" style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                <Lightbulb size={18} color="var(--warning)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                <div>{qa.answer}</div>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

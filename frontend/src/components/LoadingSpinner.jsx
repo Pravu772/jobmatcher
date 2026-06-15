@@ -24,17 +24,31 @@ export default function LoadingSpinner() {
   }, []);
 
   return (
-    <div className="spinner-overlay">
-      <div className="spinner-container">
-        <div className="spinner-ring"></div>
-        <div className="spinner-ring-inner"></div>
-        <div className="spinner-icon">✨</div>
+    <div className="skeleton-loading-container">
+      {/* Central Cycling Loading Messages Card */}
+      <div className="loading-card">
+        <div className="spinner-ring-wrap">
+          <div className="spinner-ring"></div>
+          <div className="spinner-icon">⚡</div>
+        </div>
+        <h3 className="fade-text" key={messageIndex}>
+          {loadingMessages[messageIndex]}
+        </h3>
+        <p>Our AI is analyzing your resume. This usually takes 15–30 seconds.</p>
       </div>
-      <div className="spinner-text fade-text" key={messageIndex}>
-        {loadingMessages[messageIndex]}
-      </div>
-      <div className="spinner-sub">
-        Our AI is carefully reading your resume. This usually takes 15–30 seconds.
+
+      {/* Pulsing Dashboard Skeleton Background */}
+      <div className="skeleton-grid">
+        <div className="skeleton-bar-row">
+          <div className="skeleton-circle-widget pulse"></div>
+          <div className="skeleton-circle-widget pulse"></div>
+          <div className="skeleton-circle-widget pulse"></div>
+        </div>
+        <div className="skeleton-dashboard-cards">
+          <div className="skeleton-card pulse" style={{ height: '320px' }}></div>
+          <div className="skeleton-card pulse" style={{ height: '320px' }}></div>
+        </div>
+        <div className="skeleton-card pulse" style={{ height: '240px' }}></div>
       </div>
     </div>
   );

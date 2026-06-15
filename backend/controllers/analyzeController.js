@@ -66,7 +66,7 @@ const analyze = async (req, res, next) => {
     const documentHash = generateHash(trimmedResumeText, trimmedJD);
 
     // Check cache
-    const existingAnalysis = await Analysis.findOne({ documentHash });
+    const existingAnalysis = await Analysis.findOne({ documentHash, userId: req.user._id });
     if (existingAnalysis) {
       console.log('✅ Found existing analysis in DB, returning cached result.');
       const normalizedData = normalizeAtsScore(existingAnalysis.toObject());
@@ -80,6 +80,7 @@ const analyze = async (req, res, next) => {
     // Save to MongoDB
     const analysis = new Analysis({
       documentHash,
+      userId: req.user._id,
       resumeText: trimmedResumeText,
       jobDescription: trimmedJD,
       candidateProfile: aiResult.candidateProfile || {},
@@ -119,7 +120,7 @@ const matchJD = async (req, res, next) => {
     const documentHash = generateHash(trimmedResumeText, trimmedJD);
 
     // Check cache
-    const existingAnalysis = await Analysis.findOne({ documentHash });
+    const existingAnalysis = await Analysis.findOne({ documentHash, userId: req.user._id });
     if (existingAnalysis) {
       console.log('✅ Found existing analysis for JD Match in DB, returning cached result.');
       return res.json({ success: true, jdMatch: existingAnalysis.jdMatch });
@@ -131,6 +132,7 @@ const matchJD = async (req, res, next) => {
     // Save full analysis to DB for future caching
     const analysis = new Analysis({
       documentHash,
+      userId: req.user._id,
       resumeText: trimmedResumeText,
       jobDescription: trimmedJD,
       candidateProfile: aiResult.candidateProfile || {},
@@ -152,4 +154,45 @@ const matchJD = async (req, res, next) => {
   }
 };
 
-module.exports = { uploadResume, analyze, matchJD };
+// GET /api/history
+const getHistory = async (req, res, next) => {
+  try {
+    const history = await Analysis.find({ userId: req.user._id })
+      .select('createdAt candidateProfile.name atsScore.overallScore jdMatch.score jobDescription')
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, data: history });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// DELETE /api/history/:id
+const deleteHistoryItem = async (req, res, next) => {
+  try {
+    const analysis = await Analysis.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
+    if (!analysis) {
+      return res.status(404).json({ success: false, error: 'Analysis not found or not authorized.' });
+    }
+    res.json({ success: true, message: 'Analysis deleted successfully.' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// GET /api/analysis/:id
+const getAnalysis = async (req, res, next) => {
+  try {
+    const analysis = await Analysis.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!analysis) {
+      return res.status(404).json({ success: false, error: 'Analysis not found or not authorized.' });
+    }
+    const normalizedData = normalizeAtsScore(analysis.toObject());
+    res.json({ success: true, data: normalizedData });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { uploadResume, analyze, matchJD, getHistory, deleteHistoryItem, getAnalysis };
+

@@ -5,9 +5,24 @@ const scoreClass = (s) => s >= 70 ? 'score-high' : s >= 40 ? 'score-mid' : 'scor
 const pillClass = (s) => s >= 70 ? 'ats-score-high' : s >= 40 ? 'ats-score-mid' : 'ats-score-low';
 
 function ATSCategory({ category, isExpanded, onToggle }) {
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onToggle();
+    }
+  };
+
   return (
     <div style={{ marginBottom: 8 }}>
-      <div className="ats-category" onClick={onToggle}>
+      <div 
+        className="ats-category" 
+        onClick={onToggle}
+        onKeyDown={handleKeyDown}
+        role="button"
+        tabIndex={0}
+        aria-expanded={isExpanded}
+        aria-label={`Toggle category: ${category.name}`}
+      >
         <div className="ats-category-title">{category.name}</div>
         <div className="ats-category-right">
           <span className={`ats-score-pill ${pillClass(category.score)}`}>{category.score}%</span>

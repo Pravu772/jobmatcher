@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const analysisSchema = new mongoose.Schema(
   {
     documentHash: { type: String, index: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
     resumeText: { type: String, required: true },
     jobDescription: { type: String, default: '' },
     candidateProfile: {
@@ -89,5 +90,7 @@ const analysisSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+analysisSchema.index({ userId: 1, documentHash: 1 });
 
 module.exports = mongoose.model('Analysis', analysisSchema);

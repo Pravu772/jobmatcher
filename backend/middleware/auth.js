@@ -33,7 +33,11 @@ exports.protect = async (req, res, next) => {
 
   try {
     // Verify token
-    const secret = process.env.JWT_SECRET || 'jobmatcher_super_secret_key_2026';
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      console.error('❌ FATAL: JWT_SECRET is not defined in environment variables.');
+      return res.status(500).json({ success: false, error: 'Internal server error: missing configuration.' });
+    }
     const decoded = jwt.verify(token, secret);
 
     // Attach user to req object

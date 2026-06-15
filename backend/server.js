@@ -12,9 +12,16 @@ const authRoutes = require('./routes/authRoutes');
 const analyzeRoutes = require('./routes/analyzeRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const errorHandler = require('./middleware/errorHandler');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// ── Startup Environment Guard ─────────────────────────────────────────────────
+if (!process.env.JWT_SECRET) {
+  console.error('❌ FATAL: JWT_SECRET is not set in environment variables. Server cannot start.');
+  process.exit(1);
+}
 
 app.set('trust proxy', 1);
 
@@ -32,7 +39,7 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -46,6 +53,27 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cookieParser());
+
+// ── Rate Limiting ─────────────────────────────────────────────────────────────
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per window
+  message: { success: false, error: 'Too many requests from this IP. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const analysisLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // Limit each IP to 10 analysis requests per hour
+  message: { success: false, error: 'Analysis limit reached. Maximum 10 requests per hour.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/api', apiLimiter);
+app.use('/api/analyze', analysisLimiter);
+app.use('/api/match-jd', analysisLimiter);
 
 // Routes
 app.use('/api/auth', authRoutes);

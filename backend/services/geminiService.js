@@ -2,12 +2,68 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+// ── Dynamic model discovery ───────────────────────────────────────────────────
+// Fetches the live model list from Google AI so we never hardcode a deprecated
+// model name again. Result is cached for the lifetime of the process.
+let _cachedModels = null;
+
+const getAvailableModels = async () => {
+  if (_cachedModels) return _cachedModels;
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`
+    );
+    const json = await res.json();
+
+    if (!json.models) {
+      console.warn('[Gemini] Could not fetch model list, using safe defaults.');
+      _cachedModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+      return _cachedModels;
+    }
+
+    // Keep only Gemini models that support generateContent
+    const supported = json.models
+      .filter(m =>
+        Array.isArray(m.supportedGenerationMethods) &&
+        m.supportedGenerationMethods.includes('generateContent') &&
+        /gemini/i.test(m.name)
+      )
+      // Sort: prefer flash (fast + cheap) over pro, newer over older
+      .sort((a, b) => {
+        const score = (name) => {
+          if (/2\.0-flash(?!-lite)/.test(name)) return 0; // gemini-2.0-flash ← best
+          if (/2\.0-flash-lite/.test(name))    return 1;
+          if (/1\.5-flash(?!-lite)/.test(name)) return 2;
+          if (/1\.5-pro/.test(name))           return 3;
+          if (/flash/.test(name))              return 4;
+          if (/pro/.test(name))               return 5;
+          return 9;
+        };
+        return score(a.name) - score(b.name);
+      })
+      // Strip "models/" prefix — SDK expects bare model name
+      .map(m => m.name.replace(/^models\//, ''));
+
+    console.log('[Gemini] Available models:', supported);
+    _cachedModels = supported.length ? supported : ['gemini-2.0-flash', 'gemini-1.5-flash'];
+  } catch (err) {
+    console.warn('[Gemini] Model list fetch failed, using safe defaults:', err.message);
+    _cachedModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+  }
+
+  return _cachedModels;
+};
+
+// ── Prompt builder ────────────────────────────────────────────────────────────
 const buildPrompt = (resumeText, jobDescription = '') => {
   const jdSection = jobDescription
     ? `JOB DESCRIPTION PROVIDED:\n${jobDescription}`
     : 'NO JOB DESCRIPTION PROVIDED - skip jdMatch analysis, return empty jdMatch object.';
 
-  const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const currentDate = new Date().toLocaleDateString('en-US', {
+    year: 'numeric', month: 'long', day: 'numeric'
+  });
 
   return `You are an expert AI career coach and resume analyst. Analyze the following resume and return a comprehensive JSON response covering all sections below. Return ONLY valid JSON, no markdown, no extra text.
   
@@ -137,15 +193,9 @@ Rules:
 - If jdMatch is not applicable, return: "jdMatch": {}`;
 };
 
+// ── Main analysis function ────────────────────────────────────────────────────
 const analyzeResume = async (resumeText, jobDescription = '') => {
-  // Array of models to try in sequence if one fails due to 503 overload
-  const fallbackModels = [
-    'gemini-flash-latest',
-    'gemma-3-27b-it',
-    'gemini-2.0-flash-lite',
-    'gemini-1.5-flash-latest'
-  ];
-
+  const fallbackModels = await getAvailableModels();
   const prompt = buildPrompt(resumeText, jobDescription);
   let lastError = null;
 
@@ -155,7 +205,8 @@ const analyzeResume = async (resumeText, jobDescription = '') => {
       const model = genAI.getGenerativeModel({
         model: modelName,
         generationConfig: {
-          temperature: 0, // Force deterministic output so same resume gets same score
+          temperature: 0,
+          responseMimeType: 'application/json',
         }
       });
       const result = await model.generateContent(prompt);
@@ -166,27 +217,22 @@ const analyzeResume = async (resumeText, jobDescription = '') => {
       text = text.replace(/```json\n?/gi, '').replace(/```\n?/gi, '').trim();
 
       const parsed = JSON.parse(text);
-      return parsed; // Success! Return the parsed JSON
+      console.log(`[Gemini] ✅ Success with model: ${modelName}`);
+      return parsed;
     } catch (err) {
       console.warn(`[Gemini] Model ${modelName} failed:`, err.message);
       lastError = err;
-
-      // If it's a 503 (Overloaded) or 429 (Quota), try the next model.
-      // If it's a 400 (Bad Request) or parsing error, it's likely a prompt issue, but we'll retry anyway just in case the model hallucinated.
-      if (err.message.includes('404')) {
-        // 404 means the model doesn't exist for this API key, safe to try the next one.
-        continue;
-      }
+      // Continue to next model regardless of error type
     }
   }
 
-  // If all models fail, throw a clean error based on the last failure
+  // All models failed — throw a user-friendly error
   if (lastError) {
     if (lastError.message.includes('429') || lastError.message.includes('quota')) {
-      throw new Error('Gemini API quota exceeded across all available models. Please wait until tomorrow or upgrade your Google AI plan.');
+      throw new Error('Gemini API quota exceeded. Please wait or upgrade your Google AI plan.');
     }
     if (lastError.message.includes('503')) {
-      throw new Error('All AI models are currently experiencing high demand. Please try again in a few minutes.');
+      throw new Error('All AI models are experiencing high demand. Please try again in a few minutes.');
     }
     throw new Error('AI analysis failed after multiple attempts: ' + lastError.message);
   }

@@ -6,8 +6,8 @@ const { sendPasswordResetEmail } = require('../services/emailService');
 
 // Generate JWT token
 const generateToken = (id) => {
-  // In a real app, use a strong secret from .env. For now we use a fallback.
-  const secret = process.env.JWT_SECRET || 'jobmatcher_super_secret_key_2026';
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error('FATAL: JWT_SECRET is not defined in environment variables.');
   return jwt.sign({ id }, secret, { expiresIn: '7d' });
 };
 
@@ -151,7 +151,9 @@ exports.forgotPassword = async (req, res, next) => {
     const cleanFrontendUrl = frontendUrl.replace(/\/$/, '');
     const resetLink = `${cleanFrontendUrl}/reset-password/${token}`;
 
-    console.log('🔑 Password Reset Link:', resetLink);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('🔑 Password Reset Link:', resetLink);
+    }
 
     // Send password reset email using Resend
     await sendPasswordResetEmail(normalizedEmail, resetLink);

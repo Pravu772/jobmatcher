@@ -26,11 +26,22 @@ export default function LearningPath({ data }) {
               <div className="step-meta" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={12} /> {step.estimatedTime}</div>
               {(step.resources || []).length > 0 && (
                 <div className="step-resources">
-                  {(step.resources || []).map((r, j) => (
-                    <span key={j} className="chip chip-gray" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                      <Book size={12} /> {r}
-                    </span>
-                  ))}
+                  {(step.resources || []).map((r, j) => {
+                    const isUrl = typeof r === 'string' && (r.startsWith('http://') || r.startsWith('https://'));
+                    const href = isUrl ? r : `https://www.google.com/search?q=${encodeURIComponent(r)}`;
+                    return (
+                      <a
+                        key={j}
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="chip chip-gray chip-link"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', textDecoration: 'none' }}
+                      >
+                        <Book size={12} /> {r}
+                      </a>
+                    );
+                  })}
                 </div>
               )}
             </div>

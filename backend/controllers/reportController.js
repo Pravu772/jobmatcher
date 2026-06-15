@@ -29,6 +29,11 @@ const generateReport = async (req, res, next) => {
     if (!analysis) {
       return res.status(404).json({ success: false, error: 'Analysis not found.' });
     }
+
+    // Verify ownership
+    if (String(analysis.userId) !== String(req.user._id)) {
+      return res.status(403).json({ success: false, error: 'Not authorized to access this report.' });
+    }
     
     // Normalize score to ensure PDF exactly matches the UI calculated score
     analysis = normalizeAtsScore(analysis.toObject());
