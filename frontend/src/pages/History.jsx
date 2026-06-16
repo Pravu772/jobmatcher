@@ -80,22 +80,26 @@ export default function History() {
       <Navbar />
       <main className="main">
         <div className="history-container">
+
+          {/* Header */}
           <div className="history-header">
             <div className="history-title-wrap">
               <h1>
-                <HistoryIcon size={32} color="var(--primary)" />
+                <HistoryIcon size={28} color="var(--primary)" />
                 Analysis History
               </h1>
               <p>Revisit your past resume evaluations and job matching scores.</p>
             </div>
           </div>
 
+          {/* Error */}
           {error && (
             <div className="error-banner" style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
               <AlertCircle size={20} /> {error}
             </div>
           )}
 
+          {/* Content */}
           {loading ? (
             <LoadingSpinner />
           ) : history.length === 0 ? (
@@ -116,25 +120,36 @@ export default function History() {
           ) : (
             <div className="history-grid">
               {history.map((item) => (
-                <div key={item._id} className="history-card" onClick={() => handleView(item._id)}>
-                  <div className="history-main-info">
+                <div key={item._id} className="history-card">
+
+                  {/* Top row: name + date + delete */}
+                  <div className="history-card-top">
                     <div className="history-meta-box">
                       <div className="history-candidate-name">
                         {item.candidateProfile?.name || 'Untitled Candidate'}
                       </div>
                       <div className="history-date">
-                        <Calendar size={14} /> {formatDate(item.createdAt)}
+                        <Calendar size={13} /> {formatDate(item.createdAt)}
                       </div>
                     </div>
-
-                    {item.jobDescription && (
-                      <div className="history-jd-snippet" title={item.jobDescription}>
-                        <strong>JD:</strong> {item.jobDescription}
-                      </div>
-                    )}
+                    <button
+                      className="btn-history-delete"
+                      onClick={(e) => handleDelete(item._id, e)}
+                      aria-label="Delete report"
+                    >
+                      <Trash2 size={17} />
+                    </button>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                  {/* JD snippet */}
+                  {item.jobDescription && (
+                    <div className="history-jd-snippet" title={item.jobDescription}>
+                      <strong>JD:</strong> {item.jobDescription}
+                    </div>
+                  )}
+
+                  {/* Bottom row: scores + view button */}
+                  <div className="history-card-bottom">
                     <div className="history-scores">
                       <div className="history-score-item">
                         <span className="history-score-val" style={{ color: getScoreColor(item.atsScore?.overallScore || 0) }}>
@@ -142,7 +157,6 @@ export default function History() {
                         </span>
                         <span className="history-score-label">ATS Score</span>
                       </div>
-
                       <div className="history-score-item">
                         <span className="history-score-val" style={{ color: item.jdMatch?.score ? getScoreColor(item.jdMatch.score) : 'var(--text-muted)' }}>
                           {item.jdMatch?.score !== undefined ? `${item.jdMatch.score}%` : 'N/A'}
@@ -151,23 +165,16 @@ export default function History() {
                       </div>
                     </div>
 
-                    <div className="history-actions">
-                      <button className="btn-history-view" onClick={() => handleView(item._id)}>
-                        View Report
-                      </button>
-                      <button 
-                        className="btn-history-delete" 
-                        onClick={(e) => handleDelete(item._id, e)}
-                        aria-label="Delete report"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
+                    <button className="btn-history-view" onClick={() => handleView(item._id)}>
+                      View Report <ArrowRight size={14} />
+                    </button>
                   </div>
+
                 </div>
               ))}
             </div>
           )}
+
         </div>
       </main>
     </>

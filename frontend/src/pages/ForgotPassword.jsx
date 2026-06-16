@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import AuthLayout from '../components/AuthLayout';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -26,42 +27,36 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <Link to="/" className="auth-brand">
-          <img src="/logo.png" alt="JobMatcher Logo" className="auth-brand-logo" />
-          <span className="auth-brand-name">JobMatcher</span>
-        </Link>
-        <h2>Forgot Password</h2>
-        <p>Enter your email address to receive a password reset link.</p>
+    <AuthLayout>
+      <h2>Forgot Password</h2>
+      <p className="auth-subtitle">Enter your email address to receive a password reset link.</p>
 
-        {successMessage && <div className="success-banner">{successMessage}</div>}
-        {errorMessage && <div className="error-banner">{errorMessage}</div>}
+      {successMessage && <div className="success-banner">{successMessage}</div>}
+      {errorMessage && <div className="error-banner">{errorMessage}</div>}
 
-        {!successMessage && (
-          <form onSubmit={handleSubmit} className="auth-form">
-            <div className="form-group">
-              <label>Email Address</label>
-              <input
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={loading}
-              />
-            </div>
+      {!successMessage && (
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="form-group">
+            <label>Email Address</label>
+            <input
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={loading}
+            />
+          </div>
 
-            <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Sending Link...' : 'Send Reset Link'}
-            </button>
-          </form>
-        )}
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading ? 'Sending Link...' : 'Send Reset Link'}
+          </button>
+        </form>
+      )}
 
-        <div className="auth-footer">
-          <Link to="/login">Back to Log In</Link>
-        </div>
+      <div className="auth-footer">
+        <Link to="/login">Back to Log In</Link>
       </div>
-    </div>
+    </AuthLayout>
   );
 }

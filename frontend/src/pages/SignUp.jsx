@@ -2,6 +2,7 @@ import { useState, useContext, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 import { Eye, EyeOff } from 'lucide-react';
+import AuthLayout from '../components/AuthLayout';
 
 const getPasswordStrength = (pwd) => {
   if (!pwd) return { label: '', color: '', width: '0%' };
@@ -33,7 +34,7 @@ export default function SignUp() {
   const { register, user } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  // Fix #2 — Redirect already-logged-in users
+  // Redirect already-logged-in users
   useEffect(() => {
     if (user) navigate('/', { replace: true });
   }, [user, navigate]);
@@ -53,86 +54,80 @@ export default function SignUp() {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <Link to="/" className="auth-brand">
-          <img src="/logo.png" alt="JobMatcher" className="auth-brand-logo" />
-          <span className="auth-brand-name">JobMatcher</span>
-        </Link>
-        <h2>Create an Account</h2>
-        <p>Join JobMatcher AI to boost your career</p>
+    <AuthLayout>
+      <h2>Create an Account</h2>
+      <p className="auth-subtitle">Join JobMatcher AI to boost your career</p>
 
-        {error && <div className="error-banner">{error}</div>}
+      {error && <div className="error-banner">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <label>Full Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              placeholder="John Doe"
-            />
-          </div>
-          <div className="form-group">
-            <label>Email Address</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              placeholder="you@example.com"
-            />
-          </div>
-          <div className="form-group">
-            <label>Password</label>
-            <div className="password-input-wrap">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="At least 6 characters"
-                minLength={6}
-              />
-              <button
-                type="button"
-                className="password-toggle"
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-            {password && (
-              <div className="password-strength-wrap" style={{ marginTop: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Password Strength:</span>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: getPasswordStrength(password).color }}>
-                    {getPasswordStrength(password).label}
-                  </span>
-                </div>
-                <div style={{ height: '4px', background: 'var(--border)', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div style={{ 
-                    height: '100%', 
-                    width: getPasswordStrength(password).width, 
-                    background: getPasswordStrength(password).color,
-                    transition: 'all 0.3s ease'
-                  }} />
-                </div>
-              </div>
-            )}
-          </div>
-          <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Creating Account...' : 'Sign Up'}
-          </button>
-        </form>
-
-        <div className="auth-footer">
-          Already have an account? <Link to="/login">Log in here</Link>
+      <form onSubmit={handleSubmit} className="auth-form">
+        <div className="form-group">
+          <label>Full Name</label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            placeholder="Enter your full name"
+          />
         </div>
+        <div className="form-group">
+          <label>Email Address</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            placeholder="you@example.com"
+          />
+        </div>
+        <div className="form-group">
+          <label>Password</label>
+          <div className="password-input-wrap">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              placeholder="At least 6 characters"
+              minLength={6}
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+          {password && (
+            <div className="password-strength-wrap" style={{ marginTop: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Password Strength:</span>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: getPasswordStrength(password).color }}>
+                  {getPasswordStrength(password).label}
+                </span>
+              </div>
+              <div style={{ height: '4px', background: 'var(--border)', borderRadius: '2px', overflow: 'hidden' }}>
+                <div style={{ 
+                  height: '100%', 
+                  width: getPasswordStrength(password).width, 
+                  background: getPasswordStrength(password).color,
+                  transition: 'all 0.3s ease'
+                }} />
+              </div>
+            </div>
+          )}
+        </div>
+        <button type="submit" className="btn-primary" disabled={loading}>
+          {loading ? 'Creating Account...' : 'Sign Up'}
+        </button>
+      </form>
+
+      <div className="auth-footer">
+        Already have an account? <Link to="/login">Log in here</Link>
       </div>
-    </div>
+    </AuthLayout>
   );
 }

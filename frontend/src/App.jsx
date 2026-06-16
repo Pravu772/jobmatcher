@@ -10,6 +10,7 @@ import History from './pages/History';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import NotFound from './pages/NotFound';
+import MobileBottomNav from './components/MobileBottomNav';
 
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Analytics />
+        <MobileBottomNav />
       </Router>
     </AuthProvider>
   );

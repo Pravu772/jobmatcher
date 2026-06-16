@@ -141,7 +141,7 @@ export default function Home() {
       <main className="main">
         {/* Hero */}
         <div className="hero">
-          <h1>Your AI-Powered<br /><span>Career Assistant</span></h1>
+          <h1>Your AI-Powered <br /><span>Career Assistant</span></h1>
           <p>Upload your resume and get instant AI analysis — job matches, ATS score, skill gaps, learning roadmap, and interview prep.</p>
           
           <div className="badge-row">
