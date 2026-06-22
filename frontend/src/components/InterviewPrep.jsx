@@ -25,8 +25,8 @@ export default function InterviewPrep({ data }) {
 
         return (
           <div key={i} className="qa-item">
-            <div 
-              className="qa-question" 
+            <div
+              className="qa-question"
               onClick={() => setOpenIdx(openIdx === i ? null : i)}
               onKeyDown={handleKeyDown}
               role="button"

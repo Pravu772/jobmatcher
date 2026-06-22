@@ -6,6 +6,8 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please provide your name'],
       trim: true,
+      minlength: [2, 'Name must be at least 2 characters'],
+      maxlength: [100, 'Name must not exceed 100 characters'],
     },
     email: {
       type: String,
@@ -20,7 +22,8 @@ const userSchema = new mongoose.Schema(
       minlength: [6, 'Password must be at least 6 characters'],
       select: false, // Don't return password by default
     },
-    resetToken: String,
+    // Reset token is stored as SHA-256 hash — never store the raw token
+    resetTokenHash: String,
     resetTokenExpiry: Date,
   },
   { timestamps: true }

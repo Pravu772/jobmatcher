@@ -33,14 +33,14 @@ export default function Navbar() {
           <div className="navbar-links">
             {user ? (
               <>
-                <Link 
-                  to="/history" 
+                <Link
+                  to="/history"
                   className="navbar-history-link"
-                  style={{ 
-                    fontSize: '0.95rem', 
-                    fontWeight: 600, 
-                    color: location.pathname === '/history' ? 'var(--primary)' : 'var(--text-muted)', 
-                    textDecoration: 'none', 
+                  style={{
+                    fontSize: '0.95rem',
+                    fontWeight: 600,
+                    color: location.pathname === '/history' ? 'var(--primary)' : 'var(--text-muted)',
+                    textDecoration: 'none',
                     marginRight: '20px',
                     transition: 'color 0.2s',
                     display: 'inline-flex',
@@ -52,8 +52,8 @@ export default function Navbar() {
                 <span className="navbar-greeting" style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text)', marginRight: '16px' }}>
                   Hi, {user.name.split(' ')[0]}
                 </span>
-                <button 
-                  onClick={handleLogoutClick} 
+                <button
+                  onClick={handleLogoutClick}
                   className="btn-outline navbar-logout-btn"
                 >
                   Logout

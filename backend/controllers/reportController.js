@@ -34,7 +34,7 @@ const generateReport = async (req, res, next) => {
     if (String(analysis.userId) !== String(req.user._id)) {
       return res.status(403).json({ success: false, error: 'Not authorized to access this report.' });
     }
-    
+
     // Normalize score to ensure PDF exactly matches the UI calculated score
     analysis = normalizeAtsScore(analysis.toObject());
 
@@ -110,9 +110,9 @@ const generateReport = async (req, res, next) => {
       ats.categories.forEach(cat => {
         doc.font('Helvetica-Bold').fillColor(DARK).fontSize(10).text(`${cat.name} (${cat.score}%)`);
         cat.items.forEach(item => {
-           const icon = item.passed ? '[Pass]' : '[Fail]';
-           const color = item.passed ? GREEN : RED;
-           doc.font('Helvetica').fillColor(color).fontSize(10).text(`  ${icon} `, { continued: true }).fillColor(GRAY).text(item.text);
+          const icon = item.passed ? '[Pass]' : '[Fail]';
+          const color = item.passed ? GREEN : RED;
+          doc.font('Helvetica').fillColor(color).fontSize(10).text(`  ${icon} `, { continued: true }).fillColor(GRAY).text(item.text);
         });
         doc.moveDown(0.5);
       });

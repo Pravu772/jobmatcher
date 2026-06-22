@@ -11,7 +11,7 @@ const generateToken = (id) => {
   return jwt.sign({ id }, secret, { expiresIn: '7d' });
 };
 
-// Set token in HTTP-only cookie
+// Set token ONLY in HTTP-only cookie — never expose token to JS / localStorage
 const sendTokenResponse = (user, statusCode, res) => {
   const token = generateToken(user._id);
 
@@ -24,9 +24,10 @@ const sendTokenResponse = (user, statusCode, res) => {
 
   user.password = undefined; // Remove password from output
 
+  // Token is intentionally NOT sent in the response body to prevent XSS via localStorage.
+  // The httpOnly cookie handles all subsequent authenticated requests.
   res.status(statusCode).cookie('token', token, options).json({
     success: true,
-    token, // Send token in body for localStorage fallback
     user,
   });
 };
@@ -36,6 +37,16 @@ const sendTokenResponse = (user, statusCode, res) => {
 exports.register = async (req, res, next) => {
   try {
     let { name, email, password } = req.body;
+
+    // #8 — Name field validation
+    if (!name || name.trim().length < 2 || name.trim().length > 100) {
+      return res.status(400).json({ success: false, error: 'Name must be between 2 and 100 characters.' });
+    }
+    name = name.trim();
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: 'Please provide email and password.' });
+    }
 
     // Normalize email
     email = email.trim().toLowerCase();
@@ -116,6 +127,77 @@ exports.getMe = async (req, res, next) => {
   }
 };
 
+// @desc    Update current user's profile (name)
+// @route   PUT /api/auth/me
+exports.updateMe = async (req, res, next) => {
+  try {
+    const { name } = req.body;
+    if (!name || name.trim().length < 2 || name.trim().length > 100) {
+      return res.status(400).json({ success: false, error: 'Name must be between 2 and 100 characters.' });
+    }
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { name: name.trim() },
+      { new: true, runValidators: true }
+    );
+    res.status(200).json({ success: true, user });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Change current user's password
+// @route   PUT /api/auth/change-password
+exports.changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword, confirmNewPassword } = req.body;
+
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
+      return res.status(400).json({ success: false, error: 'Please provide all password fields.' });
+    }
+    if (newPassword !== confirmNewPassword) {
+      return res.status(400).json({ success: false, error: 'New passwords do not match.' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, error: 'New password must be at least 6 characters.' });
+    }
+
+    const user = await User.findById(req.user.id).select('+password');
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, error: 'Current password is incorrect.' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    res.status(200).json({ success: true, message: 'Password updated successfully.' });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// @desc    Delete current user's account and all their data
+// @route   DELETE /api/auth/me
+exports.deleteMe = async (req, res, next) => {
+  try {
+    const Analysis = require('../models/Analysis');
+    await Analysis.deleteMany({ userId: req.user.id });
+    await User.findByIdAndDelete(req.user.id);
+
+    // Clear auth cookie
+    res.cookie('token', 'none', {
+      expires: new Date(Date.now() + 10 * 1000),
+      httpOnly: true,
+    });
+
+    res.status(200).json({ success: true, message: 'Account and all associated data deleted.' });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // @desc    Forgot Password
 // @route   POST /api/auth/forgot-password
 exports.forgotPassword = async (req, res, next) => {
@@ -137,19 +219,20 @@ exports.forgotPassword = async (req, res, next) => {
       });
     }
 
-    // Generate secure token
-    const token = crypto.randomBytes(32).toString('hex');
+    // Generate secure raw token (sent via email link)
+    const rawToken = crypto.randomBytes(32).toString('hex');
 
-    // Save token and expiry time (15 minutes)
-    user.resetToken = token;
-    user.resetTokenExpiry = Date.now() + 15 * 60 * 1000;
+    // #4 — Store only the SHA-256 hash in the DB; never the raw token
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    user.resetTokenHash = tokenHash;
+    user.resetTokenExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes
 
     await user.save();
 
-    // Generate reset link using application's configured frontend URL
+    // Generate reset link using the raw token (only version the user ever sees)
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const cleanFrontendUrl = frontendUrl.replace(/\/$/, '');
-    const resetLink = `${cleanFrontendUrl}/reset-password/${token}`;
+    const resetLink = `${cleanFrontendUrl}/reset-password/${rawToken}`;
 
     if (process.env.NODE_ENV !== 'production') {
       console.log('🔑 Password Reset Link:', resetLink);
@@ -172,9 +255,7 @@ exports.forgotPassword = async (req, res, next) => {
 // NOTE: This route is PUBLIC — no auth middleware is used.
 exports.resetPassword = async (req, res, next) => {
   try {
-    console.log('🔑 Reset password request received');
     const { token } = req.params;
-    console.log('   Token:', token ? `${token.slice(0, 10)}...` : 'MISSING');
     const { password, confirmPassword } = req.body;
 
     if (!password) {
@@ -189,9 +270,11 @@ exports.resetPassword = async (req, res, next) => {
       return res.status(400).json({ success: false, error: 'Password must be at least 6 characters' });
     }
 
-    // Verify token and expiry
+    // #4 — Hash the incoming raw token and compare against DB hash
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
     const user = await User.findOne({
-      resetToken: token,
+      resetTokenHash: tokenHash,
       resetTokenExpiry: { $gt: Date.now() },
     });
 
@@ -205,7 +288,7 @@ exports.resetPassword = async (req, res, next) => {
 
     // Update password, clear token and expiry to prevent token reuse
     user.password = hashedPassword;
-    user.resetToken = undefined;
+    user.resetTokenHash = undefined;
     user.resetTokenExpiry = undefined;
 
     await user.save();

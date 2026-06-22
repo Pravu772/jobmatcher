@@ -95,16 +95,16 @@ export default function Home() {
         <div className="gauge-wrap">
           <svg width="68" height="68" className="gauge-svg">
             <circle cx="34" cy="34" r={radius} className="gauge-bg-circle" />
-            <circle 
-              cx="34" 
-              cy="34" 
-              r={radius} 
-              className="gauge-fg-circle" 
-              style={{ 
-                stroke: color, 
-                strokeDasharray: circumference, 
-                strokeDashoffset: strokeDashoffset 
-              }} 
+            <circle
+              cx="34"
+              cy="34"
+              r={radius}
+              className="gauge-fg-circle"
+              style={{
+                stroke: color,
+                strokeDasharray: circumference,
+                strokeDashoffset: strokeDashoffset
+              }}
             />
           </svg>
           <div className="gauge-value">{isNa ? 'N/A' : `${value}%`}</div>
@@ -143,7 +143,7 @@ export default function Home() {
         <div className="hero">
           <h1>Your AI-Powered <br /><span>Career Assistant</span></h1>
           <p>Upload your resume and get instant AI analysis — job matches, ATS score, skill gaps, learning roadmap, and interview prep.</p>
-          
+
           <div className="badge-row">
             {badges.map(b => (
               <span key={b.text} className="badge">{b.icon} {b.text}</span>
@@ -183,29 +183,29 @@ export default function Home() {
 
             {/* Glowing SVG Gauges Summary Bar */}
             <div className="results-summary-bar">
-              <CircularProgress 
-                value={data.atsScore?.overallScore || 0} 
-                label="ATS Audit" 
-                subtitle="Resume parse compatibility" 
+              <CircularProgress
+                value={data.atsScore?.overallScore || 0}
+                label="ATS Audit"
+                subtitle="Resume parse compatibility"
               />
-              <CircularProgress 
-                value={data.jdMatch?.score || 0} 
-                label="JD Match Score" 
-                subtitle="Alignment with description" 
+              <CircularProgress
+                value={data.jdMatch?.score || 0}
+                label="JD Match Score"
+                subtitle="Alignment with description"
                 isNa={!jobDescription || !jobDescription.trim()}
               />
-              <CircularProgress 
-                value={data.skillGap?.coveragePercent || 0} 
-                label="Skill Coverage" 
-                subtitle="Required skills present" 
+              <CircularProgress
+                value={data.skillGap?.coveragePercent || 0}
+                label="Skill Coverage"
+                subtitle="Required skills present"
               />
             </div>
 
             {/* Premium Dashboard Navigation Tabs */}
             <div className="dashboard-tabs">
               {tabs.map(t => (
-                <button 
-                  key={t.id} 
+                <button
+                  key={t.id}
                   className={`dashboard-tab ${activeTab === t.id ? 'active' : ''}`}
                   onClick={() => setActiveTab(t.id)}
                 >
@@ -221,7 +221,7 @@ export default function Home() {
                 <div className="results-grid fade-in">
                   <div className="results-row-2">
                     <CandidateProfile data={data.candidateProfile} />
-                    
+
                     <div className="overview-stats-card card">
                       <div className="card-header">
                         <div className="card-icon" style={{ background: 'var(--primary-light)', color: 'var(--primary)', width: 44, height: 44, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -235,23 +235,23 @@ export default function Home() {
                       <div className="overview-stats-list">
                         <div className="overview-stat-row">
                           <span className="stat-name">Overall ATS Score</span>
-                          <span className="stat-badge" style={{ 
-                            background: (data.atsScore?.overallScore || 0) >= 70 ? 'var(--success-light)' : (data.atsScore?.overallScore || 0) >= 40 ? 'var(--warning-light)' : 'var(--error-light)', 
-                            color: (data.atsScore?.overallScore || 0) >= 70 ? 'var(--success)' : (data.atsScore?.overallScore || 0) >= 40 ? 'var(--warning)' : 'var(--error)' 
+                          <span className="stat-badge" style={{
+                            background: (data.atsScore?.overallScore || 0) >= 70 ? 'var(--success-light)' : (data.atsScore?.overallScore || 0) >= 40 ? 'var(--warning-light)' : 'var(--error-light)',
+                            color: (data.atsScore?.overallScore || 0) >= 70 ? 'var(--success)' : (data.atsScore?.overallScore || 0) >= 40 ? 'var(--warning)' : 'var(--error)'
                           }}>{data.atsScore?.overallScore || 0}%</span>
                         </div>
                         <div className="overview-stat-row">
                           <span className="stat-name">Job Description Alignment</span>
-                          <span className="stat-badge" style={{ 
-                            background: !jobDescription || !jobDescription.trim() ? 'var(--border)' : (data.jdMatch?.score || 0) >= 70 ? 'var(--success-light)' : (data.jdMatch?.score || 0) >= 40 ? 'var(--warning-light)' : 'var(--error-light)', 
-                            color: !jobDescription || !jobDescription.trim() ? 'var(--text-muted)' : (data.jdMatch?.score || 0) >= 70 ? 'var(--success)' : (data.jdMatch?.score || 0) >= 40 ? 'var(--warning)' : 'var(--error)' 
+                          <span className="stat-badge" style={{
+                            background: !jobDescription || !jobDescription.trim() ? 'var(--border)' : (data.jdMatch?.score || 0) >= 70 ? 'var(--success-light)' : (data.jdMatch?.score || 0) >= 40 ? 'var(--warning-light)' : 'var(--error-light)',
+                            color: !jobDescription || !jobDescription.trim() ? 'var(--text-muted)' : (data.jdMatch?.score || 0) >= 70 ? 'var(--success)' : (data.jdMatch?.score || 0) >= 40 ? 'var(--warning)' : 'var(--error)'
                           }}>{jobDescription && jobDescription.trim() ? `${data.jdMatch?.score || 0}%` : 'N/A'}</span>
                         </div>
                         <div className="overview-stat-row">
                           <span className="stat-name">Candidate Skill Coverage</span>
-                          <span className="stat-badge" style={{ 
-                            background: (data.skillGap?.coveragePercent || 0) >= 70 ? 'var(--success-light)' : (data.skillGap?.coveragePercent || 0) >= 40 ? 'var(--warning-light)' : 'var(--error-light)', 
-                            color: (data.skillGap?.coveragePercent || 0) >= 70 ? 'var(--success)' : (data.skillGap?.coveragePercent || 0) >= 40 ? 'var(--warning)' : 'var(--error)' 
+                          <span className="stat-badge" style={{
+                            background: (data.skillGap?.coveragePercent || 0) >= 70 ? 'var(--success-light)' : (data.skillGap?.coveragePercent || 0) >= 40 ? 'var(--warning-light)' : 'var(--error-light)',
+                            color: (data.skillGap?.coveragePercent || 0) >= 70 ? 'var(--success)' : (data.skillGap?.coveragePercent || 0) >= 40 ? 'var(--warning)' : 'var(--error)'
                           }}>{data.skillGap?.coveragePercent || 0}%</span>
                         </div>
                       </div>
@@ -346,7 +346,7 @@ export default function Home() {
             <div className="about-badge">Powered by Google Gemini</div>
             <h2>Next-Generation Career Advisory</h2>
             <p>
-              JobMatcher AI is engineered with Google's state-of-the-art Gemini generative models. 
+              JobMatcher AI is engineered with Google's state-of-the-art Gemini generative models.
               By leveraging advanced Natural Language Processing (NLP), JobMatcher parses resume text in real-time, matching structural content against candidate experience criteria, formatting constraints, and technical industry expectations.
             </p>
             <div className="about-benefits">
@@ -376,7 +376,7 @@ export default function Home() {
             </div>
             <p className="footer-tagline">Optimize your resume, identify critical skill gaps, and match with the most relevant jobs instantly using advanced AI analysis.</p>
           </div>
-          
+
           <div className="footer-links-grid">
             <div className="footer-col">
               <h4>Product</h4>
