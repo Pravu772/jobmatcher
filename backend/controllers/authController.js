@@ -11,7 +11,7 @@ const generateToken = (id) => {
   return jwt.sign({ id }, secret, { expiresIn: '7d' });
 };
 
-// Set token ONLY in HTTP-only cookie — never expose token to JS / localStorage
+// Send token in both httpOnly cookie and response body (mobile browsers block cross-site cookies)
 const sendTokenResponse = (user, statusCode, res) => {
   const token = generateToken(user._id);
 
@@ -24,10 +24,14 @@ const sendTokenResponse = (user, statusCode, res) => {
 
   user.password = undefined; // Remove password from output
 
-  // Token is intentionally NOT sent in the response body to prevent XSS via localStorage.
-  // The httpOnly cookie handles all subsequent authenticated requests.
+  // Token is sent in BOTH the httpOnly cookie (desktop) AND the response body.
+  // Mobile browsers (iOS Safari, Android Chrome) often block cross-site cookies
+  // with SameSite=None due to ITP/privacy policies. Sending the token in the
+  // response body lets the frontend store it in localStorage and send it via
+  // the Authorization header, which works reliably across all browsers.
   res.status(statusCode).cookie('token', token, options).json({
     success: true,
+    token,
     user,
   });
 };

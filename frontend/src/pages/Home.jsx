@@ -16,7 +16,26 @@ import ResumeImprover from '../components/ResumeImprover';
 import Suggestions from '../components/Suggestions';
 import LoadingSpinner from '../components/LoadingSpinner';
 import DownloadReportBtn from '../components/DownloadReportBtn';
-import { Briefcase, BarChart2, Search, BookOpen, Mic, PenTool, AlertTriangle, CheckCircle2, Rocket } from 'lucide-react';
+import { Briefcase, BarChart2, Search, BookOpen, Mic, PenTool, AlertTriangle, CheckCircle2, Rocket, Info } from 'lucide-react';
+
+/* ── Simple CSS-only Tooltip ── */
+function Tooltip({ text, children }) {
+  return (
+    <span className="p1-tooltip-wrap">
+      {children}
+      <span className="p1-tooltip-box" role="tooltip">{text}</span>
+    </span>
+  );
+}
+
+/* ── ℹ️ Info icon + tooltip helper ── */
+function InfoTip({ text }) {
+  return (
+    <Tooltip text={text}>
+      <span className="p1-info-icon" aria-label="More info"><Info size={13} /></span>
+    </Tooltip>
+  );
+}
 
 export default function Home() {
   const [resumeText, setResumeText] = useState('');
@@ -84,11 +103,12 @@ export default function Home() {
     }
   };
 
-  const CircularProgress = ({ value, label, subtitle, isNa }) => {
+  const CircularProgress = ({ value, label, subtitle, tooltip, isNa }) => {
     const radius = 26;
     const circumference = 2 * Math.PI * radius;
     const strokeDashoffset = isNa ? circumference : circumference - (value / 100) * circumference;
     const color = isNa ? 'var(--text-muted)' : value >= 70 ? 'var(--success)' : value >= 40 ? 'var(--warning)' : 'var(--error)';
+    const sentiment = isNa ? null : value >= 70 ? '✅ Great!' : value >= 40 ? '⚠️ Needs Work' : '❌ Critical';
 
     return (
       <div className="summary-gauge-item">
@@ -107,11 +127,15 @@ export default function Home() {
               }}
             />
           </svg>
-          <div className="gauge-value">{isNa ? 'N/A' : `${value}%`}</div>
+          <div className="gauge-value" style={{ color: isNa ? 'var(--text-muted)' : color }}>{isNa ? 'N/A' : `${value}%`}</div>
         </div>
         <div className="gauge-info">
-          <div className="gauge-label">{label}</div>
+          <div className="gauge-label">
+            {label}
+            {tooltip && <InfoTip text={tooltip} />}
+          </div>
           <div className="gauge-sub">{subtitle}</div>
+          {sentiment && <div className="gauge-sentiment" style={{ color }}>{sentiment}</div>}
         </div>
       </div>
     );
@@ -135,6 +159,7 @@ export default function Home() {
     { id: 'resume', name: 'Resume Tweaks', icon: <PenTool size={16} /> },
   ];
 
+
   return (
     <>
       <Navbar />
@@ -151,6 +176,7 @@ export default function Home() {
           </div>
         </div>
 
+
         {/* Input Section */}
         <div className="input-section">
           <ResumeUploader resumeText={resumeText} setResumeText={setResumeText} />
@@ -165,6 +191,8 @@ export default function Home() {
           <button className="btn-primary btn-analyze" onClick={handleAnalyze} disabled={loading} id="analyze-btn">
             {loading ? <><span className="spinner" style={{ width: 20, height: 20, borderWidth: 2, animationDuration: '0.8s' }} /> Analyzing...</> : <><Rocket size={20} /> Analyze & Match</>}
           </button>
+
+
         </div>
 
         {/* Loading */}
@@ -185,19 +213,22 @@ export default function Home() {
             <div className="results-summary-bar">
               <CircularProgress
                 value={data.atsScore?.overallScore || 0}
-                label="ATS Audit"
-                subtitle="Resume parse compatibility"
+                label="Resume Pass Rate"
+                subtitle="How well your resume scans"
+                tooltip="ATS (Applicant Tracking System) is software companies use to automatically filter resumes before a human ever sees them. A higher score means your resume will pass the filter."
               />
               <CircularProgress
                 value={data.jdMatch?.score || 0}
-                label="JD Match Score"
-                subtitle="Alignment with description"
+                label="Job Fit Score"
+                subtitle="Match with the job you applied for"
+                tooltip="This score shows how well your resume matches the job description you pasted. Higher is better — aim for 70%+."
                 isNa={!jobDescription || !jobDescription.trim()}
               />
               <CircularProgress
                 value={data.skillGap?.coveragePercent || 0}
-                label="Skill Coverage"
-                subtitle="Required skills present"
+                label="Skills You Have"
+                subtitle="Out of all required skills"
+                tooltip="This shows what percentage of the skills required for this role you already have listed on your resume."
               />
             </div>
 
@@ -234,21 +265,30 @@ export default function Home() {
                       </div>
                       <div className="overview-stats-list">
                         <div className="overview-stat-row">
-                          <span className="stat-name">Overall ATS Score</span>
+                          <span className="stat-name">
+                            Resume Pass Rate
+                            <InfoTip text="ATS (Applicant Tracking System) is software companies use to filter resumes automatically. A score of 70%+ is considered good." />
+                          </span>
                           <span className="stat-badge" style={{
                             background: (data.atsScore?.overallScore || 0) >= 70 ? 'var(--success-light)' : (data.atsScore?.overallScore || 0) >= 40 ? 'var(--warning-light)' : 'var(--error-light)',
                             color: (data.atsScore?.overallScore || 0) >= 70 ? 'var(--success)' : (data.atsScore?.overallScore || 0) >= 40 ? 'var(--warning)' : 'var(--error)'
                           }}>{data.atsScore?.overallScore || 0}%</span>
                         </div>
                         <div className="overview-stat-row">
-                          <span className="stat-name">Job Description Alignment</span>
+                          <span className="stat-name">
+                            Job Fit Score
+                            <InfoTip text="How well your resume matches the job description you pasted. Not pasted one? Add a job description above and re-analyze to unlock this score." />
+                          </span>
                           <span className="stat-badge" style={{
                             background: !jobDescription || !jobDescription.trim() ? 'var(--border)' : (data.jdMatch?.score || 0) >= 70 ? 'var(--success-light)' : (data.jdMatch?.score || 0) >= 40 ? 'var(--warning-light)' : 'var(--error-light)',
                             color: !jobDescription || !jobDescription.trim() ? 'var(--text-muted)' : (data.jdMatch?.score || 0) >= 70 ? 'var(--success)' : (data.jdMatch?.score || 0) >= 40 ? 'var(--warning)' : 'var(--error)'
                           }}>{jobDescription && jobDescription.trim() ? `${data.jdMatch?.score || 0}%` : 'N/A'}</span>
                         </div>
                         <div className="overview-stat-row">
-                          <span className="stat-name">Candidate Skill Coverage</span>
+                          <span className="stat-name">
+                            Skills You Have
+                            <InfoTip text="The percentage of required skills for this job that are already present on your resume. Missing skills are shown in the Skill Gap tab." />
+                          </span>
                           <span className="stat-badge" style={{
                             background: (data.skillGap?.coveragePercent || 0) >= 70 ? 'var(--success-light)' : (data.skillGap?.coveragePercent || 0) >= 40 ? 'var(--warning-light)' : 'var(--error-light)',
                             color: (data.skillGap?.coveragePercent || 0) >= 70 ? 'var(--success)' : (data.skillGap?.coveragePercent || 0) >= 40 ? 'var(--warning)' : 'var(--error)'
