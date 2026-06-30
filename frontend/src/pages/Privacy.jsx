@@ -1,10 +1,17 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Shield } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 import Navbar from '../components/Navbar';
 
 export default function Privacy() {
   return (
     <>
+      <Helmet>
+        <title>Privacy Policy — JobMatcher AI</title>
+        <meta name="description" content="Read the JobMatcher AI Privacy Policy. Learn how we securely process your resume data with AI and how we protect your personal information." />
+        <link rel="canonical" href="https://jobmatcherai.app/privacy" />
+        <meta name="robots" content="index, follow" />
+      </Helmet>
       <Navbar />
       <main className="main">
         <div className="legal-container">

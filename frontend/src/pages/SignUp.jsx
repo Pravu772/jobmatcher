@@ -1,4 +1,5 @@
 import { useState, useContext, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 import { Eye, EyeOff } from 'lucide-react';
@@ -55,6 +56,14 @@ export default function SignUp() {
 
   return (
     <AuthLayout>
+      <Helmet>
+        <title>Sign Up Free — JobMatcher AI Resume Analyzer</title>
+        <meta name="description" content="Create a free JobMatcher AI account to save your resume analysis history, track ATS scores, monitor skill gaps, and revisit your AI career reports anytime." />
+        <link rel="canonical" href="https://jobmatcherai.app/signup" />
+        <meta property="og:title" content="Sign Up Free — JobMatcher AI Resume Analyzer" />
+        <meta property="og:description" content="Join JobMatcher AI for free. Get unlimited AI resume analysis, ATS score checks, skill gap reports, and interview prep." />
+        <meta property="og:url" content="https://jobmatcherai.app/signup" />
+      </Helmet>
       <h2>Create an Account</h2>
       <p className="auth-subtitle">Join JobMatcher AI to boost your career</p>
 

@@ -1,4 +1,5 @@
 import { useState, useContext, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import axios from 'axios';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
@@ -162,6 +163,15 @@ export default function Home() {
 
   return (
     <>
+      <Helmet>
+        <title>JobMatcher AI — Free AI Resume Analyzer & ATS Score Checker</title>
+        <meta name="description" content="Upload your resume and get a free AI career report in 30 seconds: ATS score, job match %, skill gap analysis, learning roadmap, and AI interview prep. No sign-up required to try." />
+        <meta name="keywords" content="AI resume analyzer, ATS score checker, free resume review AI, job description matcher, skill gap analysis, resume optimizer, interview prep AI, career assistant AI" />
+        <link rel="canonical" href="https://jobmatcherai.app/" />
+        <meta property="og:title" content="JobMatcher AI — Free AI Resume Analyzer & ATS Score Checker" />
+        <meta property="og:description" content="Upload your resume and get an instant AI career report: ATS score, job match %, skill gaps, learning roadmap, and interview prep — completely free." />
+        <meta property="og:url" content="https://jobmatcherai.app/" />
+      </Helmet>
       <Navbar />
       <main className="main">
         {/* Hero */}

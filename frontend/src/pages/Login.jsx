@@ -1,4 +1,5 @@
 import { useState, useContext, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 import { Eye, EyeOff } from 'lucide-react';
@@ -35,6 +36,12 @@ export default function Login() {
 
   return (
     <AuthLayout>
+      <Helmet>
+        <title>Log In — JobMatcher AI</title>
+        <meta name="description" content="Log in to JobMatcher AI to access your AI-powered resume analysis, ATS score reports, skill gap analysis, and interview prep dashboard." />
+        <link rel="canonical" href="https://jobmatcherai.app/login" />
+        <meta name="robots" content="noindex, follow" />
+      </Helmet>
       <h2>Welcome Back</h2>
       <p className="auth-subtitle">Log in to access your AI career assistant</p>
 

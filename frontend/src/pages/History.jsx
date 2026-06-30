@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import AuthContext from '../context/AuthContext';
+import { Helmet } from 'react-helmet-async';
 import Navbar from '../components/Navbar';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { Trash2, History as HistoryIcon, Calendar, ArrowRight, AlertCircle, FileText } from 'lucide-react';
@@ -77,6 +78,11 @@ export default function History() {
 
   return (
     <>
+      <Helmet>
+        <title>My Analysis History — JobMatcher AI</title>
+        <meta name="description" content="View your past AI resume analysis reports on JobMatcher AI." />
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <Navbar />
       <main className="main">
         <div className="history-container">

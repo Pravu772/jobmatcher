@@ -1,10 +1,17 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft, FileText } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 import Navbar from '../components/Navbar';
 
 export default function Terms() {
   return (
     <>
+      <Helmet>
+        <title>Terms of Service — JobMatcher AI</title>
+        <meta name="description" content="Read the JobMatcher AI Terms of Service. Understand the rules and guidelines for using our AI-powered resume analyzer and career assistant platform." />
+        <link rel="canonical" href="https://jobmatcherai.app/terms" />
+        <meta name="robots" content="index, follow" />
+      </Helmet>
       <Navbar />
       <main className="main">
         <div className="legal-container">

@@ -1,10 +1,15 @@
 import { Link } from 'react-router-dom';
 import { HelpCircle, Home } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 import Navbar from '../components/Navbar';
 
 export default function NotFound() {
   return (
     <>
+      <Helmet>
+        <title>404 — Page Not Found | JobMatcher AI</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <Navbar />
       <main className="main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 'calc(100vh - 120px)' }}>
         <div style={{ textAlign: 'center', padding: '40px 20px', maxWidth: '480px' }}>

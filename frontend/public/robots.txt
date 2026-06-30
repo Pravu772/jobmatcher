@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
 
+# Disallow private/auth-only pages — no SEO value and require login
+Disallow: /history
+Disallow: /reset-password/
+Disallow: /forgot-password
+
 Sitemap: https://jobmatcherai.app/sitemap.xml
